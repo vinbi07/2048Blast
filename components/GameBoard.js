@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
 import {
   Animated,
   View,
@@ -14,10 +20,7 @@ import {
   GestureHandlerRootView,
 } from "react-native-gesture-handler";
 import useGameLogic from "../utils/useGameLogic";
-import {
-  BRIDGE_EVENT_SOURCE,
-  emitBridgeEvent,
-} from "../utils/bridge";
+import { BRIDGE_EVENT_SOURCE, emitBridgeEvent } from "../utils/bridge";
 import TileCell from "./TileCell";
 import { theme, tokens } from "../utils/theme";
 
@@ -128,7 +131,11 @@ const GameBoard = () => {
 
   useEffect(() => {
     resetScore();
-    if (Platform.OS === "web" && typeof window !== "undefined" && window.localStorage) {
+    if (
+      Platform.OS === "web" &&
+      typeof window !== "undefined" &&
+      window.localStorage
+    ) {
       const parsed = Number(window.localStorage.getItem(BEST_SCORE_KEY));
       if (Number.isFinite(parsed) && parsed >= 0) {
         setBestScore(Math.floor(parsed));
@@ -142,7 +149,11 @@ const GameBoard = () => {
     }
 
     setBestScore(score);
-    if (Platform.OS === "web" && typeof window !== "undefined" && window.localStorage) {
+    if (
+      Platform.OS === "web" &&
+      typeof window !== "undefined" &&
+      window.localStorage
+    ) {
       window.localStorage.setItem(BEST_SCORE_KEY, String(score));
     }
   }, [bestScore, score]);
@@ -170,7 +181,11 @@ const GameBoard = () => {
     }
 
     const isTerminal = status === "won" || status === "lost";
-    if (mountedRef.current && isTerminal && previousStatusRef.current !== status) {
+    if (
+      mountedRef.current &&
+      isTerminal &&
+      previousStatusRef.current !== status
+    ) {
       emitBridgeEvent({
         type: "sessionEnd",
         score,
@@ -301,7 +316,12 @@ const GameBoard = () => {
           <Text style={styles.boardTitle}>TaskBlast Grid</Text>
           <Text style={styles.boardSubtitle}>Arcade Sector Control</Text>
         </View>
-        <View style={[styles.statusChip, status === "lost" && styles.statusChipDanger]}>
+        <View
+          style={[
+            styles.statusChip,
+            status === "lost" && styles.statusChipDanger,
+          ]}
+        >
           <Text style={styles.statusChipText}>{status.toUpperCase()}</Text>
         </View>
       </View>
@@ -322,7 +342,10 @@ const GameBoard = () => {
       </View>
 
       <View style={styles.controlsRow}>
-        <TouchableOpacity style={styles.secondaryButton} onPress={handleRestart}>
+        <TouchableOpacity
+          style={styles.secondaryButton}
+          onPress={handleRestart}
+        >
           <Text style={styles.secondaryButtonText}>New Run</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.primaryButton} onPress={handleRestart}>
@@ -331,7 +354,7 @@ const GameBoard = () => {
       </View>
 
       <GestureHandlerRootView style={styles.gestureRoot}>
-        <View style={[styles.board, { width: boardSize, height: boardSize }]}> 
+        <View style={[styles.board, { width: boardSize, height: boardSize }]}>
           {board.map((row, rowIndex) => (
             <View key={rowIndex} style={styles.row}>
               {row.map((cell, colIndex) => (
@@ -346,7 +369,9 @@ const GameBoard = () => {
             pointerEvents="none"
             style={[styles.statusOverlay, { opacity: statusFade }]}
           >
-            <Text style={styles.statusOverlayText}>{status === "won" ? "VICTORY" : "NO MOVES"}</Text>
+            <Text style={styles.statusOverlayText}>
+              {status === "won" ? "VICTORY" : "NO MOVES"}
+            </Text>
           </Animated.View>
 
           <PanGestureHandler onHandlerStateChange={handleSwipeGesture}>

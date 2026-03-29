@@ -10,22 +10,22 @@ The gameplay rules are unchanged. The redesign focuses on presentation, UX hiera
 
 - Visual direction: deep-space control panel look with cyan/teal accents and high-contrast HUD cards.
 - Layout hierarchy:
-	- Top HUD: game identity + status chip.
-	- Stats row: current score, highest tile, best score.
-	- Controls: touch-friendly `New Run` and `Restart` actions.
-	- Board panel: framed 4x4 grid with subtle depth and glow.
-	- Status feedback: readable text + terminal-state overlay.
+  - Top HUD: game identity + status chip.
+  - Stats row: current score, highest tile, best score.
+  - Controls: touch-friendly `New Run` and `Restart` actions.
+  - Board panel: framed 4x4 grid with subtle depth and glow.
+  - Status feedback: readable text + terminal-state overlay.
 - Tokenized styling system in [utils/theme.js](utils/theme.js):
-	- Colors
-	- Spacing
-	- Radii
-	- Typography scales
-	- Shadows
-	- Motion durations
+  - Colors
+  - Spacing
+  - Radii
+  - Typography scales
+  - Shadows
+  - Motion durations
 - Tile readability:
-	- Progressive palette with strong numeric contrast.
-	- Adaptive font sizing for larger values.
-	- Spawn and merge feedback animation.
+  - Progressive palette with strong numeric contrast.
+  - Adaptive font sizing for larger values.
+  - Spawn and merge feedback animation.
 
 ## Bridge Message Contract
 
@@ -41,12 +41,12 @@ Bridge output is normalized in [utils/bridge.js](utils/bridge.js) and emitted fr
 
 ```json
 {
-	"type": "scoreUpdate|tileUpdate|sessionEnd",
-	"score": 0,
-	"highestTile": 0,
-	"status": "playing|won|lost|restart-finalize",
-	"source": "2048Blast",
-	"ts": 1710000000000
+  "type": "scoreUpdate|tileUpdate|sessionEnd",
+  "score": 0,
+  "highestTile": 0,
+  "status": "playing|won|lost|restart-finalize",
+  "source": "2048Blast",
+  "ts": 1710000000000
 }
 ```
 
