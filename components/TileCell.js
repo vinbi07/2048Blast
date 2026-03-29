@@ -1,65 +1,104 @@
 import React, { useEffect, useRef } from "react";
-import { Animated, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { getTileBackgroundColor, getTileTextColor } from "../utils/theme";
+import { Animated, Text, View, StyleSheet } from "react-native";
+import {
+  getTileBackgroundColor,
+  getTileFontSize,
+  getTileTextColor,
+  tokens,
+} from "../utils/theme";
 
-const TileCell = ({ value, size }) => {
-  const scale = useRef(new Animated.Value(1)).current;
+const TileCell = ({ value, size, status }) => {
+  const spawnScale = useRef(new Animated.Value(1)).current;
+  const pulseScale = useRef(new Animated.Value(1)).current;
+  const previousValueRef = useRef(value);
 
   useEffect(() => {
-    if (!value) return;
+    if (!value || status !== "playing") {
+      previousValueRef.current = value;
+      return;
+    }
 
-    Animated.sequence([
-      Animated.timing(scale, {
-        toValue: 1.08,
-        duration: 90,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scale, {
+    const previousValue = previousValueRef.current;
+    const isSpawn = previousValue === 0 && value > 0;
+    const isMerge = previousValue > 0 && value > previousValue;
+
+    if (isSpawn) {
+      spawnScale.setValue(0.85);
+      Animated.spring(spawnScale, {
         toValue: 1,
-        duration: 110,
+        speed: 16,
+        bounciness: 10,
         useNativeDriver: true,
-      }),
-    ]).start();
-  }, [value, scale]);
+      }).start();
+    }
+
+    if (isMerge) {
+      pulseScale.setValue(1);
+      Animated.sequence([
+        Animated.timing(pulseScale, {
+          toValue: 1.09,
+          duration: tokens.motion.fast,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseScale, {
+          toValue: 1,
+          duration: tokens.motion.normal,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+
+    previousValueRef.current = value;
+  }, [pulseScale, spawnScale, status, value]);
 
   return (
     <Animated.View
-      style={{
-        transform: [{ scale }],
-      }}
+      style={[
+        styles.cell,
+        {
+          width: size,
+          height: size,
+          backgroundColor: getTileBackgroundColor(value),
+          transform: [{ scale: Animated.multiply(spawnScale, pulseScale) }],
+        },
+      ]}
     >
-      <TouchableOpacity
-        activeOpacity={1}
-        style={[
-          styles.cell,
-          {
-            width: size,
-            height: size,
-            backgroundColor: getTileBackgroundColor(value),
-          },
-        ]}
-      >
-        <Text style={[styles.cellText, { color: getTileTextColor(value) }]}> 
+      <View style={styles.innerFrame}>
+        <Text
+          style={[
+            styles.cellText,
+            {
+              color: getTileTextColor(value),
+              fontSize: getTileFontSize(value),
+            },
+          ]}
+        >
           {value === 0 ? "" : value}
         </Text>
-      </TouchableOpacity>
+      </View>
     </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
   cell: {
-    borderRadius: 12,
+    borderRadius: tokens.radii.sm,
+    borderWidth: 1,
+    borderColor: "rgba(196, 241, 255, 0.12)",
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+    ...tokens.shadows.soft,
+  },
+  innerFrame: {
+    width: "100%",
+    height: "100%",
+    borderRadius: tokens.radii.sm,
+    borderWidth: 1,
+    borderColor: "rgba(240, 252, 255, 0.12)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   cellText: {
-    fontSize: 24,
     fontWeight: "800",
   },
 });
