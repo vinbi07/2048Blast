@@ -1,18 +1,18 @@
 {
   "files": {
-    "main.js": "/2048/static/js/main.f9756e6f.js",
-    "static/js/351.480d67ec.js": "/2048/static/js/351.480d67ec.js",
-    "favicon.ico": "/2048/favicon.ico",
-    "index.html": "/2048/index.html",
-    "favicon-32.png": "/2048/favicon-32.png",
-    "favicon-16.png": "/2048/favicon-16.png",
-    "manifest.json": "/2048/manifest.json",
-    "serve.json": "/2048/serve.json",
-    "main.f9756e6f.js.map": "/2048/static/js/main.f9756e6f.js.map",
-    "351.480d67ec.js.map": "/2048/static/js/351.480d67ec.js.map"
+    "main.js": "/2048Blast/static/js/main.f9756e6f.js",
+    "static/js/351.5b519b41.js": "/2048Blast/static/js/351.5b519b41.js",
+    "favicon.ico": "/2048Blast/favicon.ico",
+    "index.html": "/2048Blast/index.html",
+    "favicon-32.png": "/2048Blast/favicon-32.png",
+    "favicon-16.png": "/2048Blast/favicon-16.png",
+    "manifest.json": "/2048Blast/manifest.json",
+    "serve.json": "/2048Blast/serve.json",
+    "main.f9756e6f.js.map": "/2048Blast/static/js/main.f9756e6f.js.map",
+    "351.5b519b41.js.map": "/2048Blast/static/js/351.5b519b41.js.map"
   },
   "entrypoints": [
-    "static/js/351.480d67ec.js",
+    "static/js/351.5b519b41.js",
     "static/js/main.f9756e6f.js"
   ]
 }
