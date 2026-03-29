@@ -1,41 +1,71 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet,Platform,Button,AppState,Keyboard } from 'react-native';
-import { PanGestureHandler, State, GestureHandlerRootView } from 'react-native-gesture-handler';
-import { schedulePushNotification,cancelAllScheduledNotifications } from '../notification';
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Platform,
+  AppState,
+  Dimensions,
+} from "react-native";
+import {
+  PanGestureHandler,
+  State,
+  GestureHandlerRootView,
+} from "react-native-gesture-handler";
+import { cancelAllScheduledNotifications } from "../notification";
+import useGameLogic from "../utils/useGameLogic";
+import { postToHost } from "../utils/bridge";
+import TileCell from "./TileCell";
+import { theme } from "../utils/theme";
 
-import useGameLogic from '../utils/useGameLogic';
+const GRID_SIZE = 4;
+const TWO_APPEARANCE_PERCENTAGE = 0.7;
 
-// Add the compareGrid and addNumber functions here
-const GameVariablesGrid = {
-  //  Size of the grid
-  gridSize: 4,
-  // Winning state/number of the Game
-  winningNumber: 2048,
-  twoAppearancePercentage: 0.7,
-};
-
-
+const createEmptyBoard = () =>
+  Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(0));
 
 const getRandomItem = (arr) => {
   const randomIndex = Math.floor(Math.random() * arr.length);
   return arr[randomIndex];
 };
 
-const addNumber = (newGrid) => {
-  let options = [];
-  for (let i = 0; i < GameVariablesGrid.gridSize; i++) {
-    for (let j = 0; j < GameVariablesGrid.gridSize; j++) {
-      if (newGrid[i][j] === 0) {
+const cloneBoard = (board) => board.map((row) => [...row]);
+
+const boardsEqual = (a, b) => {
+  for (let r = 0; r < GRID_SIZE; r += 1) {
+    for (let c = 0; c < GRID_SIZE; c += 1) {
+      if (a[r][c] !== b[r][c]) {
+        return false;
+      }
+    }
+  }
+  return true;
+};
+
+const getHighestTile = (board) => Math.max(0, ...board.flat());
+
+const addNumber = (grid) => {
+  const options = [];
+  for (let i = 0; i < GRID_SIZE; i += 1) {
+    for (let j = 0; j < GRID_SIZE; j += 1) {
+      if (grid[i][j] === 0) {
         options.push({ x: i, y: j });
       }
     }
   }
 
   if (options.length > 0) {
-    let spot = getRandomItem(options);
-    newGrid[spot.x][spot.y] =
-      Math.random() <= GameVariablesGrid.twoAppearancePercentage ? 2 : 4;
+    const spot = getRandomItem(options);
+    grid[spot.x][spot.y] = Math.random() <= TWO_APPEARANCE_PERCENTAGE ? 2 : 4;
   }
+};
+
+const createInitialBoard = () => {
+  const grid = createEmptyBoard();
+  addNumber(grid);
+  addNumber(grid);
+  return grid;
 };
 
 const GameBoard = () => {
@@ -50,264 +80,273 @@ const GameBoard = () => {
     resetScore,
   } = useGameLogic();
 
-  const [board, setBoard] = useState(Array(4).fill(Array(4).fill(0)));
+  const [board, setBoard] = useState(() => createInitialBoard());
+
+  const score = getScore();
+  const highestTile = useMemo(() => getHighestTile(board), [board]);
+  const hasWon = isGameWon(board);
+  const hasLost = isGameLost(board);
+  const status = hasWon ? "won" : hasLost ? "lost" : "playing";
+
+  const tileSize = useMemo(() => {
+    const screenWidth = Dimensions.get("window").width;
+    const maxBoardWidth = Math.min(screenWidth - 32, 356);
+    const innerWidth = maxBoardWidth - 20;
+    return Math.floor(innerWidth / GRID_SIZE) - 8;
+  }, []);
 
   useEffect(() => {
-    placeNewTile();
-    placeNewTile();
     resetScore();
   }, []);
+
   useEffect(() => {
-    // Function to handle app state change (foreground/background)
-    const handleAppStateChange = (nextAppState) => {
-      if (nextAppState === 'active') {
-        // App is in the foreground, cancel all scheduled notifications
+    const appStateSubscription = AppState.addEventListener("change", (next) => {
+      if (next === "active") {
         cancelAllScheduledNotifications();
       }
-    };
+    });
 
-    // Add app state change event listener
-    const appStateSubscription = AppState.addEventListener(
-      'change',
-      handleAppStateChange
-    );
-
-    // Clean up the listener when the component unmounts
     return () => {
       appStateSubscription.remove();
     };
   }, []);
 
-
-  const placeNewTile = () => {
-    const emptyCells = [];
-    board.forEach((row, rowIndex) => {
-      row.forEach((cell, colIndex) => {
-        if (cell === 0) {
-          emptyCells.push({ row: rowIndex, col: colIndex });
-        }
-      });
+  useEffect(() => {
+    postToHost({
+      type: "scoreUpdate",
+      score,
+      highestTile,
+      status,
+      source: "2048",
+      ts: Date.now(),
     });
-  
-    if (emptyCells.length === 0) {
-      // Game over condition: no more empty cells to place a new tile
-      return;
-    }
-  
-    // Choose a random empty cell
-    const { row, col } = emptyCells[Math.floor(Math.random() * emptyCells.length)];
-    
-    // Randomly choose 2 (70% chance) or 4 (30% chance) to place
-    const newValue = Math.random() <= GameVariablesGrid.twoAppearancePercentage ? 2 : 4;
-    
-    const newBoard = [...board];
-    newBoard[row][col] = newValue;
-    setBoard(newBoard);
-  };
 
- 
-  const getTileBackgroundColor = (value) => {
-    const colorMapping = {
-      0: '#CDC1B4', // Empty tile color
-      2: '#EEE4DA',
-      4: '#EDE0C8',
-      8: '#F2B179',
-      16: '#F59563',
-      32: '#F67C5F',
-      64: '#F65E3B',
-      128: '#EDCF72',
-      256: '#EDCC61',
-      512: '#EDC850',
-      1024: '#EDC53F',
-      2048: '#EDC22E',
-    };
+    postToHost({
+      type: "tileUpdate",
+      highestTile,
+      score,
+      source: "2048",
+      ts: Date.now(),
+    });
+  }, [score, highestTile, status]);
 
-    return colorMapping[value] || '#3C3A32'; // Default color for values greater than 2048
-  };
+  const applyMove = useCallback(
+    (moveFn) => {
+      setBoard((prevBoard) => {
+        const nextBoard = moveFn(cloneBoard(prevBoard));
 
-  // Function to handle swipe gestures
+        if (boardsEqual(prevBoard, nextBoard)) {
+          return prevBoard;
+        }
+
+        addNumber(nextBoard);
+        return nextBoard;
+      });
+    },
+    [setBoard],
+  );
+
   const handleSwipeGesture = ({ nativeEvent }) => {
     const { translationX, translationY, state } = nativeEvent;
-    if (state === State.END) {
-      if (Math.abs(translationX) > Math.abs(translationY)) {
-        if (translationX < 0) {
-          setBoard((prevBoard) => {
-            const newBoard = swipeLeft(prevBoard.map((row) => [...row]));
-            addNumber(newBoard); // Add a new number after the swipe
-            return newBoard;
-          });
-        } else {
-          setBoard((prevBoard) => {
-            const newBoard = swipeRight(prevBoard.map((row) => [...row]));
-            addNumber(newBoard); // Add a new number after the swipe
-            return newBoard;
-          });
-        }
+
+    if (state !== State.END || hasWon || hasLost) {
+      return;
+    }
+
+    if (Math.abs(translationX) > Math.abs(translationY)) {
+      if (translationX < 0) {
+        applyMove(swipeLeft);
       } else {
-        if (translationY < 0) {
-          setBoard((prevBoard) => {
-            const newBoard = swipeUp(prevBoard.map((row) => [...row]));
-            addNumber(newBoard); // Add a new number after the swipe
-            return newBoard;
-          });
-        } else {
-          setBoard((prevBoard) => {
-            const newBoard = swipeDown(prevBoard.map((row) => [...row]));
-            addNumber(newBoard); // Add a new number after the swipe
-            return newBoard;
-          });
+        applyMove(swipeRight);
+      }
+    } else if (translationY < 0) {
+      applyMove(swipeUp);
+    } else {
+      applyMove(swipeDown);
+    }
+  };
+
+  const handleKeyboardEvent = useCallback(
+    (event) => {
+      if (hasWon || hasLost) {
+        return;
+      }
+
+      const key = event.key;
+      const keyCode = event.keyCode;
+
+      const isArrow = [37, 38, 39, 40].includes(keyCode);
+      if (isArrow || key?.startsWith("Arrow")) {
+        if (typeof event.preventDefault === "function") {
+          event.preventDefault();
         }
       }
-    }
-  };
-  const handleKeyboardEvent = (event) => {
-    const { keyCode } = event;
-    if ([37, 38, 39, 40].includes(keyCode)) {
-      event.preventDefault();
-      switch (keyCode) {
-        case 37: // Left Arrow
-          setBoard((prevBoard) => {
-            const newBoard = swipeLeft(prevBoard.map((row) => [...row]));
-            addNumber(newBoard); // Add a new number after the swipe
-            return newBoard;
-          });
-          break;
-        case 39: // Right Arrow
-          setBoard((prevBoard) => {
-            const newBoard = swipeRight(prevBoard.map((row) => [...row]));
-            addNumber(newBoard); // Add a new number after the swipe
-            return newBoard;
-          });
-          break;
-        case 38: // Up Arrow
-          setBoard((prevBoard) => {
-            const newBoard = swipeUp(prevBoard.map((row) => [...row]));
-            addNumber(newBoard); // Add a new number after the swipe
-            return newBoard;
-          });
-          break;
-        case 40: // Down Arrow
-          setBoard((prevBoard) => {
-            const newBoard = swipeDown(prevBoard.map((row) => [...row]));
-            addNumber(newBoard); // Add a new number after the swipe
-            return newBoard;
-          });
-          break;
-        default:
-          break;
+
+      if (keyCode === 37 || key === "ArrowLeft") {
+        applyMove(swipeLeft);
+      } else if (keyCode === 39 || key === "ArrowRight") {
+        applyMove(swipeRight);
+      } else if (keyCode === 38 || key === "ArrowUp") {
+        applyMove(swipeUp);
+      } else if (keyCode === 40 || key === "ArrowDown") {
+        applyMove(swipeDown);
       }
-    }
-  };
-  
-   
+    },
+    [applyMove, hasLost, hasWon, swipeDown, swipeLeft, swipeRight, swipeUp],
+  );
+
   useEffect(() => {
-    if (Platform.OS === 'web') {
-      // Web specific code goes here
-      window.addEventListener('keydown', handleKeyboardEvent);
-
-      // Clean up the listener when the component unmounts
-      return () => {
-        window.removeEventListener('keydown', handleKeyboardEvent);
-      };
-    } else {
-      // React Native specific code goes here
-      const { Keyboard } = require('react-native');
-
-      Keyboard.addListener('keydown', handleKeyboardEvent);
-
-      // Clean up the listener when the component unmounts
-      return () => {
-        Keyboard.removeListener('keydown', handleKeyboardEvent);
-      };
+    if (Platform.OS !== "web") {
+      return undefined;
     }
-  }, []);
-  const handleSendNotification = async () => {
-    console.log("triggered");
 
-    try {
-      const notificationId = await schedulePushNotification();
-      console.log("Notification scheduled with ID:", notificationId);
-    } catch (error) {
-      console.error("Failed to schedule notification:", error);
-    }
+    window.addEventListener("keydown", handleKeyboardEvent);
+    return () => {
+      window.removeEventListener("keydown", handleKeyboardEvent);
+    };
+  }, [handleKeyboardEvent]);
+
+  const handleRestart = () => {
+    resetScore();
+    setBoard(createInitialBoard());
+    postToHost({
+      type: "scoreUpdate",
+      score: 0,
+      highestTile: 0,
+      status: "playing",
+      source: "2048",
+      ts: Date.now(),
+    });
   };
 
   return (
-    <View>
-    <GestureHandlerRootView style={styles.container}>
-      <View style={styles.board}>
-        {board.map((row, rowIndex) => (
-          <View key={rowIndex} style={styles.row}>
-            {row.map((cell, colIndex) => (
-              <TouchableOpacity
-                key={colIndex}
-                style={[styles.cell, { backgroundColor: getTileBackgroundColor(cell) }]}
-              >
-                <Text style={styles.cellText}>{cell === 0 ? '' : cell}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        ))}
-        <Text style={styles.scoreText}>Score: {getScore()}</Text>
-        {isGameWon(board) && (
-        <Text style={styles.messageText}>Congratulations! You've won the game!</Text>
+    <View style={styles.panel}>
+      <View style={styles.hudRow}>
+        <View style={styles.hudCard}>
+          <Text style={styles.hudLabel}>Score</Text>
+          <Text style={styles.hudValue}>{score}</Text>
+        </View>
+
+        <View style={styles.hudCard}>
+          <Text style={styles.hudLabel}>Highest Tile</Text>
+          <Text style={styles.hudValue}>{highestTile}</Text>
+        </View>
+      </View>
+
+      <TouchableOpacity style={styles.restartButton} onPress={handleRestart}>
+        <Text style={styles.restartText}>Restart Round</Text>
+      </TouchableOpacity>
+
+      <GestureHandlerRootView style={styles.gestureRoot}>
+        <View style={styles.board}>
+          {board.map((row, rowIndex) => (
+            <View key={rowIndex} style={styles.row}>
+              {row.map((cell, colIndex) => (
+                <View key={colIndex} style={styles.tileWrap}>
+                  <TileCell value={cell} size={tileSize} />
+                </View>
+              ))}
+            </View>
+          ))}
+
+          <PanGestureHandler onHandlerStateChange={handleSwipeGesture}>
+            <View style={styles.gestureHandlerContainer} />
+          </PanGestureHandler>
+        </View>
+      </GestureHandlerRootView>
+
+      {hasWon && (
+        <Text style={[styles.messageText, { color: theme.success }]}>
+          You reached 2048. Stellar run!
+        </Text>
       )}
 
-      {isGameLost(board) && (
-        <Text style={styles.messageText}>Game Over! Try again!</Text>
+      {hasLost && (
+        <Text style={[styles.messageText, { color: theme.danger }]}>
+          No moves left. Restart and try a new path.
+        </Text>
       )}
-        <PanGestureHandler onHandlerStateChange={handleSwipeGesture}>
-          <View style={styles.gestureHandlerContainer} />
-        </PanGestureHandler>
-      </View>
-    </GestureHandlerRootView>
-    <View>
-       <Button title="notify" onPress={()=>handleSendNotification()}/>
-    </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  panel: {
+    width: "100%",
+    maxWidth: 380,
+    borderRadius: 18,
+    padding: 12,
+    backgroundColor: theme.panel,
+    borderWidth: 1,
+    borderColor: theme.panelBorder,
+  },
+  hudRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  hudCard: {
+    flex: 1,
+    backgroundColor: theme.boardBg,
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: "rgba(148, 163, 184, 0.25)",
+    marginHorizontal: 4,
+  },
+  hudLabel: {
+    color: theme.textMuted,
+    fontSize: 12,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+  },
+  hudValue: {
+    marginTop: 2,
+    color: theme.textPrimary,
+    fontSize: 22,
+    fontWeight: "900",
+  },
+  restartButton: {
+    marginTop: 10,
+    marginBottom: 12,
+    alignSelf: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 999,
+    backgroundColor: theme.accent,
+  },
+  restartText: {
+    color: theme.textDark,
+    fontWeight: "900",
+    fontSize: 13,
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
+  },
+  gestureRoot: {
+    alignSelf: "center",
+  },
   board: {
-    marginTop: 20,
-    backgroundColor: '#BBADA0',
-    padding: 5,
-    borderRadius: 5,
+    backgroundColor: theme.boardBg,
+    borderRadius: 16,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: "rgba(148, 163, 184, 0.22)",
   },
   row: {
-    flexDirection: 'row',
+    flexDirection: "row",
   },
-  cell: {
-    width: 70,
-    height: 70,
-    backgroundColor: '#CDC1B4',
-    borderRadius: 5,
-    justifyContent: 'center',
-    alignItems: 'center',
-    margin: 5,
-  },
-  cellText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#776E65',
-  },
-  scoreText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#776E65',
-    alignSelf: 'center',
-    marginVertical: 10,
+  tileWrap: {
+    margin: 4,
   },
   gestureHandlerContainer: {
     ...StyleSheet.absoluteFillObject,
   },
   messageText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#FF0000', // Customize the color for the messages
-    alignSelf: 'center',
-    marginTop: 20,
+    marginTop: 12,
+    textAlign: "center",
+    fontSize: 16,
+    fontWeight: "800",
   },
 });
 

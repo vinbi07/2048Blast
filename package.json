@@ -2,7 +2,7 @@
   "name": "2048",
   "version": "1.0.0",
   "main": "node_modules/expo/AppEntry.js",
-  "homepage": "http://mshivam019.github.io/2048",
+  "homepage": "https://vinbi07.github.io/2048Blast",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
