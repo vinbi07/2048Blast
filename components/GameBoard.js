@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   Platform,
-  AppState,
   Dimensions,
 } from "react-native";
 import {
@@ -13,7 +12,6 @@ import {
   State,
   GestureHandlerRootView,
 } from "react-native-gesture-handler";
-import { cancelAllScheduledNotifications } from "../notification";
 import useGameLogic from "../utils/useGameLogic";
 import { postToHost } from "../utils/bridge";
 import TileCell from "./TileCell";
@@ -97,18 +95,6 @@ const GameBoard = () => {
 
   useEffect(() => {
     resetScore();
-  }, []);
-
-  useEffect(() => {
-    const appStateSubscription = AppState.addEventListener("change", (next) => {
-      if (next === "active") {
-        cancelAllScheduledNotifications();
-      }
-    });
-
-    return () => {
-      appStateSubscription.remove();
-    };
   }, []);
 
   useEffect(() => {

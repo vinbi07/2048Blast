@@ -1,13 +1,11 @@
 import React from "react";
 import { View, StyleSheet, Text } from "react-native";
 import GameBoard from "./components/GameBoard";
-import Notification from "./notification";
 import { theme } from "./utils/theme";
 
 const App = () => {
   return (
     <View style={styles.container}>
-      <Notification />
       <View style={styles.headerWrap}>
         <Text style={styles.title}>2048 Blast</Text>
         <Text style={styles.subtitle}>TaskBlast Arcade Edition</Text>
