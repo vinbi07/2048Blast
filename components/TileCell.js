@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   cellText: {
-    fontWeight: "800",
+    fontFamily: tokens.fonts.extraBold,
   },
 });
 

@@ -47,6 +47,13 @@ export const tokens = {
     tileBase: 24,
     tileDense: 18,
   },
+  fonts: {
+    regular: "Orbitron_500Medium",
+    semibold: "Orbitron_600SemiBold",
+    bold: "Orbitron_700Bold",
+    extraBold: "Orbitron_800ExtraBold",
+    black: "Orbitron_900Black",
+  },
   shadows: {
     soft: {
       shadowColor: "#000000",

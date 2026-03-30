@@ -26,7 +26,8 @@ import { theme, tokens } from "../utils/theme";
 
 const GRID_SIZE = 4;
 const TWO_APPEARANCE_PERCENTAGE = 0.7;
-const BEST_SCORE_KEY = "taskblast_2048_best_score";
+const ROCKS_SCORE_DIVISOR = 100;
+const ROCKS_STORAGE_KEY = "taskblast_2048_rocks_total";
 
 const createEmptyBoard = () =>
   Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(0));
@@ -99,11 +100,12 @@ const GameBoard = () => {
   } = useGameLogic();
 
   const [board, setBoard] = useState(() => createInitialBoard());
-  const [bestScore, setBestScore] = useState(0);
+  const [totalRocks, setTotalRocks] = useState(0);
   const statusFade = useRef(new Animated.Value(0)).current;
   const previousHighestRef = useRef(0);
   const previousStatusRef = useRef("playing");
   const mountedRef = useRef(false);
+  const awardedRocksThisRunRef = useRef(0);
   const { width, height } = useWindowDimensions();
 
   const score = getScore();
@@ -131,32 +133,38 @@ const GameBoard = () => {
 
   useEffect(() => {
     resetScore();
+
     if (
       Platform.OS === "web" &&
       typeof window !== "undefined" &&
       window.localStorage
     ) {
-      const parsed = Number(window.localStorage.getItem(BEST_SCORE_KEY));
-      if (Number.isFinite(parsed) && parsed >= 0) {
-        setBestScore(Math.floor(parsed));
+      const savedRocks = Number(window.localStorage.getItem(ROCKS_STORAGE_KEY));
+      if (Number.isFinite(savedRocks) && savedRocks >= 0) {
+        setTotalRocks(Math.floor(savedRocks));
       }
     }
-  }, [resetScore]);
+  }, []);
 
   useEffect(() => {
-    if (score <= bestScore) {
-      return;
-    }
+    const rocksFromScore = Math.floor(Math.max(0, score) / ROCKS_SCORE_DIVISOR);
+    const newlyEarned = rocksFromScore - awardedRocksThisRunRef.current;
 
-    setBestScore(score);
+    if (newlyEarned > 0) {
+      setTotalRocks((prev) => prev + newlyEarned);
+      awardedRocksThisRunRef.current = rocksFromScore;
+    }
+  }, [score]);
+
+  useEffect(() => {
     if (
       Platform.OS === "web" &&
       typeof window !== "undefined" &&
       window.localStorage
     ) {
-      window.localStorage.setItem(BEST_SCORE_KEY, String(score));
+      window.localStorage.setItem(ROCKS_STORAGE_KEY, String(totalRocks));
     }
-  }, [bestScore, score]);
+  }, [totalRocks]);
 
   useEffect(() => {
     emitBridgeEvent({
@@ -284,7 +292,7 @@ const GameBoard = () => {
     };
   }, [handleKeyboardEvent]);
 
-  const handleRestart = () => {
+  const handleNewRun = () => {
     emitBridgeEvent({
       type: "sessionEnd",
       score,
@@ -297,6 +305,7 @@ const GameBoard = () => {
     resetScore();
     previousHighestRef.current = 0;
     previousStatusRef.current = "playing";
+    awardedRocksThisRunRef.current = 0;
     setBoard(createInitialBoard());
 
     emitBridgeEvent({
@@ -328,7 +337,7 @@ const GameBoard = () => {
 
       <View style={[styles.hudRow, isLandscape && styles.hudRowLandscape]}>
         <View style={styles.hudCard}>
-          <Text style={styles.hudLabel}>Current</Text>
+          <Text style={styles.hudLabel}>Score</Text>
           <Text style={styles.hudValue}>{score}</Text>
         </View>
         <View style={styles.hudCard}>
@@ -336,20 +345,14 @@ const GameBoard = () => {
           <Text style={styles.hudValue}>{highestTile}</Text>
         </View>
         <View style={styles.hudCard}>
-          <Text style={styles.hudLabel}>Best</Text>
-          <Text style={styles.hudValue}>{bestScore}</Text>
+          <Text style={styles.hudLabel}>Rocks Earned</Text>
+          <Text style={styles.hudValue}>{totalRocks}</Text>
         </View>
       </View>
 
       <View style={styles.controlsRow}>
-        <TouchableOpacity
-          style={styles.secondaryButton}
-          onPress={handleRestart}
-        >
-          <Text style={styles.secondaryButtonText}>New Run</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.primaryButton} onPress={handleRestart}>
-          <Text style={styles.primaryButtonText}>Restart</Text>
+        <TouchableOpacity style={styles.newRunButton} onPress={handleNewRun}>
+          <Text style={styles.newRunButtonText}>New Run</Text>
         </TouchableOpacity>
       </View>
 
@@ -413,7 +416,7 @@ const styles = StyleSheet.create({
   boardTitle: {
     color: theme.textPrimary,
     fontSize: tokens.typography.title,
-    fontWeight: "900",
+    fontFamily: tokens.fonts.black,
     letterSpacing: 0.6,
     textTransform: "uppercase",
   },
@@ -421,7 +424,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.textSecondary,
     fontSize: tokens.typography.body,
     marginTop: 2,
-    fontWeight: "600",
+    fontFamily: tokens.fonts.regular,
   },
   statusChip: {
     minWidth: 88,
@@ -441,7 +444,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.textPrimary,
     fontSize: tokens.typography.label,
     letterSpacing: 0.6,
-    fontWeight: "800",
+    fontFamily: tokens.fonts.extraBold,
   },
   hudRow: {
     flexDirection: "row",
@@ -464,7 +467,7 @@ const styles = StyleSheet.create({
   hudLabel: {
     color: theme.textMuted,
     fontSize: tokens.typography.label,
-    fontWeight: "700",
+    fontFamily: tokens.fonts.bold,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
@@ -472,16 +475,15 @@ const styles = StyleSheet.create({
     marginTop: 2,
     color: theme.textPrimary,
     fontSize: tokens.typography.value,
-    fontWeight: "900",
+    fontFamily: tokens.fonts.black,
   },
   controlsRow: {
     marginBottom: tokens.spacing.md,
     flexDirection: "row",
-    justifyContent: "space-between",
-    columnGap: tokens.spacing.xs,
+    justifyContent: "center",
   },
-  primaryButton: {
-    flex: 1,
+  newRunButton: {
+    width: "100%",
     minHeight: 48,
     borderRadius: tokens.radii.pill,
     backgroundColor: theme.accent,
@@ -489,26 +491,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     ...tokens.shadows.glow,
   },
-  secondaryButton: {
-    flex: 1,
-    minHeight: 48,
-    borderRadius: tokens.radii.pill,
-    backgroundColor: "rgba(64, 224, 255, 0.12)",
-    borderWidth: 1,
-    borderColor: "rgba(64, 224, 255, 0.35)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  primaryButtonText: {
+  newRunButtonText: {
     color: tokens.colors.textDark,
-    fontWeight: "900",
-    fontSize: 13,
-    letterSpacing: 0.5,
-    textTransform: "uppercase",
-  },
-  secondaryButtonText: {
-    color: tokens.colors.textPrimary,
-    fontWeight: "800",
+    fontFamily: tokens.fonts.extraBold,
     fontSize: 13,
     letterSpacing: 0.5,
     textTransform: "uppercase",
@@ -545,13 +530,13 @@ const styles = StyleSheet.create({
     color: tokens.colors.textPrimary,
     fontSize: tokens.typography.title,
     letterSpacing: 2,
-    fontWeight: "900",
+    fontFamily: tokens.fonts.black,
   },
   messageText: {
     marginTop: 2,
     textAlign: "center",
     fontSize: 15,
-    fontWeight: "800",
+    fontFamily: tokens.fonts.bold,
     color: tokens.colors.textSecondary,
   },
   messageTextSuccess: {

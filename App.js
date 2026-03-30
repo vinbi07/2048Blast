@@ -1,9 +1,27 @@
 import React from "react";
 import { View, StyleSheet, Text } from "react-native";
+import {
+  useFonts,
+  Orbitron_500Medium,
+  Orbitron_700Bold,
+  Orbitron_800ExtraBold,
+  Orbitron_900Black,
+} from "@expo-google-fonts/orbitron";
 import GameBoard from "./components/GameBoard";
 import { theme, tokens } from "./utils/theme";
 
 const App = () => {
+  const [fontsLoaded] = useFonts({
+    Orbitron_500Medium,
+    Orbitron_700Bold,
+    Orbitron_800ExtraBold,
+    Orbitron_900Black,
+  });
+
+  if (!fontsLoaded) {
+    return null;
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.bgOrbLarge} pointerEvents="none" />
@@ -54,7 +72,7 @@ const styles = StyleSheet.create({
   title: {
     color: theme.textPrimary,
     fontSize: tokens.typography.display,
-    fontWeight: "900",
+    fontFamily: tokens.fonts.black,
     letterSpacing: 0.8,
     textTransform: "uppercase",
   },
@@ -62,7 +80,7 @@ const styles = StyleSheet.create({
     color: tokens.colors.textSecondary,
     fontSize: tokens.typography.subtitle,
     marginTop: 2,
-    fontWeight: "600",
+    fontFamily: tokens.fonts.regular,
   },
 });
 
