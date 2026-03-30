@@ -1,18 +1,24 @@
 {
   "files": {
-    "main.js": "/2048Blast/static/js/main.4c0dc3cb.js",
-    "static/js/471.8f96e93a.js": "/2048Blast/static/js/471.8f96e93a.js",
+    "main.js": "/2048Blast/static/js/main.f56b8985.js",
+    "static/js/691.7ff3b30e.js": "/2048Blast/static/js/691.7ff3b30e.js",
+    "static/media/Orbitron_500Medium.ttf": "/2048Blast/static/media/Orbitron_500Medium.7501b621f3b08c541a7f.ttf",
+    "static/media/Orbitron_600SemiBold.ttf": "/2048Blast/static/media/Orbitron_600SemiBold.b3593c33fabab2f949d8.ttf",
+    "static/media/Orbitron_400Regular.ttf": "/2048Blast/static/media/Orbitron_400Regular.28ad88d68a2ba3530234.ttf",
+    "static/media/Orbitron_800ExtraBold.ttf": "/2048Blast/static/media/Orbitron_800ExtraBold.1a7bb12d21f20599157c.ttf",
+    "static/media/Orbitron_700Bold.ttf": "/2048Blast/static/media/Orbitron_700Bold.5277bf9db54c3e1a248a.ttf",
+    "static/media/Orbitron_900Black.ttf": "/2048Blast/static/media/Orbitron_900Black.6612276fd431e7e33aeb.ttf",
     "favicon.ico": "/2048Blast/favicon.ico",
     "index.html": "/2048Blast/index.html",
     "favicon-32.png": "/2048Blast/favicon-32.png",
     "favicon-16.png": "/2048Blast/favicon-16.png",
     "manifest.json": "/2048Blast/manifest.json",
     "serve.json": "/2048Blast/serve.json",
-    "main.4c0dc3cb.js.map": "/2048Blast/static/js/main.4c0dc3cb.js.map",
-    "471.8f96e93a.js.map": "/2048Blast/static/js/471.8f96e93a.js.map"
+    "main.f56b8985.js.map": "/2048Blast/static/js/main.f56b8985.js.map",
+    "691.7ff3b30e.js.map": "/2048Blast/static/js/691.7ff3b30e.js.map"
   },
   "entrypoints": [
-    "static/js/471.8f96e93a.js",
-    "static/js/main.4c0dc3cb.js"
+    "static/js/691.7ff3b30e.js",
+    "static/js/main.f56b8985.js"
   ]
 }
