@@ -114,6 +114,7 @@ const GameBoard = () => {
   const hasLost = isGameLost(board);
   const status = hasWon ? "won" : hasLost ? "lost" : "playing";
   const isLandscape = width > height;
+  const isCompactMobile = !isLandscape && width <= 420;
 
   const boardSize = useMemo(() => {
     const horizontalPadding = tokens.spacing.md * 2;
@@ -322,16 +323,23 @@ const GameBoard = () => {
     <View style={styles.panel}>
       <View style={styles.topHudRow}>
         <View>
-          <Text style={styles.boardTitle}>TaskBlast Grid</Text>
           <Text style={styles.boardSubtitle}>Arcade Sector Control</Text>
         </View>
         <View
           style={[
             styles.statusChip,
+            isCompactMobile && styles.statusChipCompact,
             status === "lost" && styles.statusChipDanger,
           ]}
         >
-          <Text style={styles.statusChipText}>{status.toUpperCase()}</Text>
+          <Text
+            style={[
+              styles.statusChipText,
+              isCompactMobile && styles.statusChipTextCompact,
+            ]}
+          >
+            {status.toUpperCase()}
+          </Text>
         </View>
       </View>
 
@@ -436,6 +444,11 @@ const styles = StyleSheet.create({
     borderColor: "rgba(63, 255, 177, 0.45)",
     alignItems: "center",
   },
+  statusChipCompact: {
+    minWidth: 68,
+    paddingVertical: 5,
+    paddingHorizontal: 9,
+  },
   statusChipDanger: {
     backgroundColor: "rgba(255, 79, 111, 0.17)",
     borderColor: "rgba(255, 79, 111, 0.45)",
@@ -445,6 +458,10 @@ const styles = StyleSheet.create({
     fontSize: tokens.typography.label,
     letterSpacing: 0.6,
     fontFamily: tokens.fonts.extraBold,
+  },
+  statusChipTextCompact: {
+    fontSize: 10,
+    letterSpacing: 0.3,
   },
   hudRow: {
     flexDirection: "row",
